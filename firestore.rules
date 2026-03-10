@@ -1,0 +1,76 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: check if the authenticated user is an admin
+    function isAdmin() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Users can read/write their own profile; admins can read/write any
+    match /users/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow create: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow update: if request.auth != null && (request.auth.uid == uid || isAdmin());
+    }
+
+    // Courses are readable by everyone; admins can write
+    match /courses/{courseId} {
+      allow read: if true;
+      allow write: if isAdmin();
+
+      match /sections/{sectionId} {
+        allow read: if true;
+        allow write: if isAdmin();
+
+        match /exercises/{exerciseId} {
+          allow read: if request.auth != null;
+          allow write: if isAdmin();
+        }
+      }
+
+      // Reviews: readable by everyone, writable by enrolled users (own review) or admins
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if request.auth != null;
+        allow update: if request.auth != null &&
+          (resource.data.userId == request.auth.uid || isAdmin());
+      }
+    }
+
+    // Categories are readable by everyone; admins can write
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Enrollments: authenticated users can query their own; admins can read/write all
+    match /enrollments/{enrollmentId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null &&
+        (request.resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if request.auth != null &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+
+      match /sectionResults/{resultId} {
+        allow read, write: if request.auth != null;
+      }
+    }
+
+    // Review schedule: authenticated users can query their own
+    match /reviewSchedule/{itemId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null &&
+        request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null;
+    }
+
+    // Enrollment pairs: readable by authenticated users; admins can write
+    match /enrollmentPairs/{pairId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+  }
+}
