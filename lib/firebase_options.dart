@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDPg-paSZnDaTt2rOvB-9jtpBcVB5U8zcQ',
-    appId: '1:614955091401:android:2ba6b7bcf5e8e63e801418',
+    appId: '1:614955091401:android:908cdfd8497116ce801418',
     messagingSenderId: '614955091401',
     projectId: 'elearning-caf76',
     storageBucket: 'elearning-caf76.firebasestorage.app',
@@ -64,7 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '614955091401',
     projectId: 'elearning-caf76',
     storageBucket: 'elearning-caf76.firebasestorage.app',
-    iosBundleId: 'com.example.flutterApplication1',
+    iosBundleId: 'com.theodor.deeplearn',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -73,7 +73,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '614955091401',
     projectId: 'elearning-caf76',
     storageBucket: 'elearning-caf76.firebasestorage.app',
-    iosBundleId: 'com.example.flutterApplication1',
+    iosBundleId: 'com.theodor.deeplearn',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

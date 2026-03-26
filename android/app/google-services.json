@@ -48,6 +48,42 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:614955091401:android:908cdfd8497116ce801418",
+        "android_client_info": {
+          "package_name": "com.theodor.deeplearn"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "614955091401-odokm0ii9jt6o25deium8k6esd3nfinl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPg-paSZnDaTt2rOvB-9jtpBcVB5U8zcQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "614955091401-odokm0ii9jt6o25deium8k6esd3nfinl.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "614955091401-qo1nsneisk02dmbchfv8hq0v6g1jfav9.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.flutterApplication1"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"
