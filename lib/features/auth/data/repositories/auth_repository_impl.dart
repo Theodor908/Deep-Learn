@@ -115,14 +115,11 @@ class AuthRepositoryImpl implements AuthRepository {
         createdAt: DateTime.now(),
       );
 
-
       await _datasource.saveUserProfile(profile);
-
 
       try {
         await _datasource.sendEmailVerification();
-      } catch (_) {
-      }
+      } catch (_) {}
 
       return profile.toEntity();
     } on FirebaseAuthException catch (e) {
@@ -146,7 +143,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> updateProfile({String? displayName, String? photoUrl}) async {
+  Future<void> updateProfile({String? displayName, String? photoUrl, bool clearPhoto = false}) async {
     final user = _datasource.currentFirebaseUser;
     if (user == null) return;
     final profile = await _datasource.getUserProfile(user.uid);
@@ -154,7 +151,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
     final updated = profile.copyWith(
       displayName: displayName ?? profile.displayName,
-      photoUrl: photoUrl ?? profile.photoUrl,
+      photoUrl: clearPhoto ? null : (photoUrl ?? profile.photoUrl),
     );
     await _datasource.saveUserProfile(updated);
   }
@@ -165,11 +162,9 @@ class AuthRepositoryImpl implements AuthRepository {
     if (user == null) return;
     try {
       await _datasource.updateFcmToken(user.uid, token);
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
-  /// e.g. "john.doe@gmail.com" → "john.doe"
   String _extractUsername(String? email) {
     if (email == null || !email.contains('@')) {
       return 'user';

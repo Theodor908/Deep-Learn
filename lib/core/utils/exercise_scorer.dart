@@ -8,6 +8,8 @@ abstract final class ExerciseScorer {
       ExerciseType.fillBlank => _scoreFillBlank(exercise, userAnswer),
       ExerciseType.matching => _scoreMatching(exercise, userAnswer),
       ExerciseType.openEnded => _scoreOpenEnded(exercise, userAnswer),
+      ExerciseType.photo => 0.0, // Photo exercises are standalone, not scored here.
+      ExerciseType.map => 0.0,
     };
   }
 

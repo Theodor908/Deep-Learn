@@ -32,6 +32,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Maps API key is set directly in AndroidManifest.xml
     }
 
     buildTypes {

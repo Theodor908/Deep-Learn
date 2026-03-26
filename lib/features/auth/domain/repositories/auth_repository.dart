@@ -13,6 +13,6 @@ abstract class AuthRepository {
   Future<void> sendEmailVerification();
   Future<void> signOut();
   Future<void> updatePassword(String newPassword);
-  Future<void> updateProfile({String? displayName, String? photoUrl});
+  Future<void> updateProfile({String? displayName, String? photoUrl, bool clearPhoto = false});
   Future<void> updateFcmToken(String token);
 }

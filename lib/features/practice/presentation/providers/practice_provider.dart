@@ -140,7 +140,6 @@ class PracticeNotifier extends _$PracticeNotifier {
     return true;
   }
 
-  /// Maps a score (0.0–1.0) to SM-2 quality (0–5).
   int _scoreToQuality(double score) {
     if (score >= 0.95) return 5;
     if (score >= 0.85) return 4;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -13,6 +14,7 @@ import '../providers/course_provider.dart';
 import 'section_content_screen.dart';
 import '../providers/enrollment_provider.dart';
 import '../widgets/exercise_widgets/fill_blank_exercise.dart';
+import '../widgets/exercise_widgets/map_exercise_widget.dart';
 import '../widgets/exercise_widgets/matching_exercise.dart';
 import '../widgets/exercise_widgets/mcq_exercise.dart';
 import '../widgets/exercise_widgets/open_ended_exercise.dart';
@@ -45,6 +47,33 @@ class _ExerciseScreenState extends ConsumerState<ExerciseScreen> {
 
   bool _isSubmitted = false;
   double _overallScore = 0.0;
+
+  bool _arrivedAtDestination = false;
+  final Set<String> _completedPhotoIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreArrivalState();
+  }
+
+  Future<void> _restoreArrivalState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final arrived = prefs.getBool('map_arrived_${widget.sectionId}') ?? false;
+    if (arrived && mounted) {
+      setState(() => _arrivedAtDestination = true);
+    }
+  }
+
+  Future<void> _onArrived() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('map_arrived_${widget.sectionId}', true);
+    if (mounted) setState(() => _arrivedAtDestination = true);
+  }
+
+  void _onPhotoCorrect(String exerciseId) {
+    setState(() => _completedPhotoIds.add(exerciseId));
+  }
 
   @override
   void dispose() {
@@ -129,7 +158,9 @@ class _ExerciseScreenState extends ConsumerState<ExerciseScreen> {
 
           final sortedExercises = List<Exercise>.from(exercises)
             ..sort((a, b) => a.order.compareTo(b.order));
-            final scorableExercises = sortedExercises.where((e) => e.type != ExerciseType.photo).toList();
+            final scorableExercises = sortedExercises
+                .where((e) => e.type != ExerciseType.photo && e.type != ExerciseType.map)
+                .toList();
 
           return Column(
             children: [
@@ -137,7 +168,7 @@ class _ExerciseScreenState extends ConsumerState<ExerciseScreen> {
               if (!_isSubmitted && scorableExercises.isNotEmpty)
                 _ProgressBar(
                   answered: _answers.keys.where((id) =>
-                    sortedExercises.any((e) => e.id == id && e.type != ExerciseType.photo)
+                    scorableExercises.any((e) => e.id == id)
                   ).length,
                   total: scorableExercises.length,
                 ),
@@ -159,20 +190,33 @@ class _ExerciseScreenState extends ConsumerState<ExerciseScreen> {
                   ),
                   itemBuilder: (context, index) {
                     final exercise = sortedExercises[index];
-                    return _buildExerciseWidget(exercise, index);
+                    return _buildExerciseWidget(exercise, index, sortedExercises);
                   },
                 ),
               ),
 
-              // Submit / Retry button
+              // Submit / Retry button (for scorable sections)
               if (scorableExercises.isNotEmpty)
                 _BottomBar(
                   isSubmitted: _isSubmitted,
-                  canSubmit: _answers.length == scorableExercises.length,
+                  canSubmit: _answers.keys
+                      .where((id) => scorableExercises.any((e) => e.id == id))
+                      .length == scorableExercises.length,
                   passed: _overallScore >= AppConstants.passThreshold,
                   onSubmit: () => _submit(scorableExercises),
                   onRetry: _retry,
                   onContinue: _handleContinue,
+                ),
+
+              // Complete Section button (for non-scorable sections like map + photos only)
+              if (scorableExercises.isEmpty && sortedExercises.isNotEmpty)
+                _FieldChallengeBar(
+                  photoExercises: sortedExercises
+                      .where((e) => e.type == ExerciseType.photo)
+                      .toList(),
+                  completedPhotoIds: _completedPhotoIds,
+                  arrived: _arrivedAtDestination,
+                  onComplete: () => _completeFieldChallenge(sortedExercises),
                 ),
             ],
           );
@@ -181,7 +225,7 @@ class _ExerciseScreenState extends ConsumerState<ExerciseScreen> {
     );
   }
 
-  Widget _buildExerciseWidget(Exercise exercise, int index) {
+  Widget _buildExerciseWidget(Exercise exercise, int index, List<Exercise> sortedExercises) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -253,6 +297,13 @@ class _ExerciseScreenState extends ConsumerState<ExerciseScreen> {
             ),
           ExerciseType.photo => PhotoExerciseWidget(
               exercise: exercise,
+              locked: sortedExercises.any((e) => e.type == ExerciseType.map) &&
+                  !_arrivedAtDestination,
+              onCorrect: () => _onPhotoCorrect(exercise.id),
+            ),
+          ExerciseType.map => MapExerciseWidget(
+              exercise: exercise,
+              onArrived: _onArrived,
             ),
         },
         // Explanation (shown after submission)
@@ -394,6 +445,55 @@ class _ExerciseScreenState extends ConsumerState<ExerciseScreen> {
     if (!mounted) return;
 
     // Pop ExerciseScreen + SectionContentScreen (back to CourseDetailScreen)
+    var count = 0;
+    Navigator.of(context).popUntil((_) => count++ >= 2);
+
+    if (nextSection != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => SectionContentScreen(
+            courseId: widget.courseId,
+            sectionId: nextSection.id,
+            sectionTitle: nextSection.title,
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _completeFieldChallenge(List<Exercise> exercises) async {
+    // Update enrollment progress (same as passing a scored section)
+    final enrollment =
+        await ref.read(enrollmentProvider(widget.courseId).future);
+    final currentCompleted = enrollment?.completedSections ?? <int>[];
+    final updatedCompleted =
+        {...currentCompleted, widget.sectionOrder}.toList();
+
+    final course =
+        await ref.read(courseDetailProvider(widget.courseId).future);
+    final total = course.totalSections;
+    final percentage = total > 0 ? updatedCompleted.length / total : 0.0;
+
+    ref.read(enrollmentNotifierProvider.notifier).updateProgress(
+          widget.courseId,
+          currentSectionOrder: widget.sectionOrder + 1,
+          completedSections: [widget.sectionOrder],
+          completionPercentage: percentage,
+        );
+
+    // Navigate to next section or back to course overview
+    // (Cannot reuse _handleContinue because _overallScore is 0.0 in non-scorable sections)
+    final sections = await ref.read(
+      courseSectionsProvider(widget.courseId).future,
+    );
+    final sorted = List<Section>.from(sections)
+      ..sort((a, b) => a.order.compareTo(b.order));
+    final nextSection = sorted
+        .where((s) => s.order == widget.sectionOrder + 1)
+        .firstOrNull;
+
+    if (!mounted) return;
+
     var count = 0;
     Navigator.of(context).popUntil((_) => count++ >= 2);
 
@@ -663,6 +763,91 @@ class _BottomBar extends StatelessWidget {
                   ),
                 ),
               ),
+      ),
+    );
+  }
+}
+
+class _FieldChallengeBar extends StatelessWidget {
+  final List<Exercise> photoExercises;
+  final Set<String> completedPhotoIds;
+  final bool arrived;
+  final VoidCallback onComplete;
+
+  const _FieldChallengeBar({
+    required this.photoExercises,
+    required this.completedPhotoIds,
+    required this.arrived,
+    required this.onComplete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final allPhotosComplete = photoExercises.isNotEmpty &&
+        photoExercises.every((e) => completedPhotoIds.contains(e.id));
+    final canComplete = arrived && allPhotosComplete;
+    final completedCount = completedPhotoIds.length;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Progress text
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(
+                '$completedCount / ${photoExercises.length} flowers identified',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton(
+                onPressed: canComplete ? onComplete : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor:
+                      AppColors.success.withValues(alpha: 0.3),
+                  disabledForegroundColor: Colors.white60,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Text(
+                  canComplete
+                      ? 'Complete Scavenger Hunt'
+                      : !arrived
+                          ? 'Arrive at destination first'
+                          : 'Identify all flowers to complete',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

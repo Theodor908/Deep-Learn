@@ -195,6 +195,14 @@ class _AuthenticatedBody extends ConsumerWidget {
     final recommended = ref.watch(recommendedCoursesProvider);
     final dueItems = ref.watch(dueReviewItemsProvider);
 
+    // Build progress map from enrollments for course cards
+    final enrollmentProgressMap = <String, double>{};
+    if (enrollments.hasValue) {
+      for (final e in enrollments.value!) {
+        enrollmentProgressMap[e.courseId] = e.completionPercentage;
+      }
+    }
+
     return ListView(
       padding: const EdgeInsets.only(top: 8, bottom: 32),
       children: [
@@ -223,9 +231,8 @@ class _AuthenticatedBody extends ConsumerWidget {
         recentCourses.when(
           data: (courses) => HorizontalCourseList(
             courses: courses,
-            actionLabel: 'Enroll now',
+            progressMap: enrollmentProgressMap,
             onCourseTap: (c) => context.go('/course/${c.id}'),
-            onAction: (c) => context.go('/course/${c.id}'),
           ),
           loading: () => const _SectionShimmer(),
           error: (_, __) => const _SectionError(),
@@ -242,9 +249,8 @@ class _AuthenticatedBody extends ConsumerWidget {
         recommended.when(
           data: (courses) => HorizontalCourseList(
             courses: courses,
-            actionLabel: 'Explore now',
+            progressMap: enrollmentProgressMap,
             onCourseTap: (c) => context.go('/course/${c.id}'),
-            onAction: (c) => context.go('/course/${c.id}'),
           ),
           loading: () => const _SectionShimmer(),
           error: (_, __) => const _SectionError(),

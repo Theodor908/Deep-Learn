@@ -153,6 +153,8 @@ class _AdminExerciseEditorScreenState
       ExerciseType.fillBlank => 'Fill Blank',
       ExerciseType.matching => 'Matching',
       ExerciseType.openEnded => 'Open Ended',
+      ExerciseType.photo => 'Photo',
+      ExerciseType.map => 'Map',
     };
   }
 
@@ -170,6 +172,20 @@ class _AdminExerciseEditorScreenState
         text: exercise?.correctAnswer.join(', ') ?? '');
     final explanationController =
         TextEditingController(text: exercise?.explanation ?? '');
+    final photoPromptController =
+        TextEditingController(text: exercise?.photoPrompt ?? '');
+    final cooldownController = TextEditingController(
+        text: '${exercise?.retryCooldownSeconds ?? 60}');
+    final destLatController = TextEditingController(
+        text: exercise?.destinationLat != null
+            ? '${exercise!.destinationLat}'
+            : '');
+    final destLngController = TextEditingController(
+        text: exercise?.destinationLng != null
+            ? '${exercise!.destinationLng}'
+            : '');
+    final geofenceController = TextEditingController(
+        text: exercise != null ? '${exercise.geofenceRadiusMeters}' : '');
     String selectedType = exercise?.type.name ?? 'mcq';
 
     showModalBottomSheet(
@@ -235,6 +251,10 @@ class _AdminExerciseEditorScreenState
                         value: 'matching', child: Text('Matching')),
                     DropdownMenuItem(
                         value: 'openEnded', child: Text('Open Ended')),
+                    DropdownMenuItem(
+                        value: 'photo', child: Text('Photo')),
+                    DropdownMenuItem(
+                        value: 'map', child: Text('Map')),
                   ],
                   onChanged: (v) =>
                       setSheetState(() => selectedType = v!),
@@ -271,6 +291,42 @@ class _AdminExerciseEditorScreenState
                   decoration:
                       _inputDecoration('Explanation (optional)'),
                 ),
+                if (selectedType == 'photo') ...[
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: photoPromptController,
+                    maxLines: 2,
+                    decoration: _inputDecoration('Photo Prompt (AI validation instruction)'),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: cooldownController,
+                    keyboardType: TextInputType.number,
+                    decoration: _inputDecoration('Retry Cooldown (seconds)'),
+                  ),
+                ],
+                if (selectedType == 'map') ...[
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: destLatController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true, signed: true),
+                    decoration: _inputDecoration('Destination Latitude'),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: destLngController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true, signed: true),
+                    decoration: _inputDecoration('Destination Longitude'),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: geofenceController,
+                    keyboardType: TextInputType.number,
+                    decoration: _inputDecoration('Geofence Radius (meters)'),
+                  ),
+                ],
                 const SizedBox(height: 20),
 
                 // Save button
@@ -282,9 +338,26 @@ class _AdminExerciseEditorScreenState
                       final question = questionController.text.trim();
                       final correctAnswer =
                           correctAnswerController.text.trim();
-                      if (question.isEmpty || correctAnswer.isEmpty) return;
+                      if (question.isEmpty) return;
+                      if (correctAnswer.isEmpty && selectedType != 'map') return;
 
                       Navigator.pop(ctx);
+
+                      final photoPrompt = selectedType == 'photo'
+                          ? photoPromptController.text.trim()
+                          : null;
+                      final cooldown = selectedType == 'photo'
+                          ? int.tryParse(cooldownController.text.trim()) ?? 60
+                          : null;
+                      final destLat = selectedType == 'map'
+                          ? double.tryParse(destLatController.text.trim())
+                          : null;
+                      final destLng = selectedType == 'map'
+                          ? double.tryParse(destLngController.text.trim())
+                          : null;
+                      final geofence = selectedType == 'map'
+                          ? int.tryParse(geofenceController.text.trim())
+                          : null;
 
                       final options = optionsController.text
                           .split(',')
@@ -308,6 +381,11 @@ class _AdminExerciseEditorScreenState
                               explanationController.text.trim().isNotEmpty
                                   ? explanationController.text.trim()
                                   : null,
+                          photoPrompt: photoPrompt,
+                          retryCooldownSeconds: cooldown,
+                          destinationLat: destLat,
+                          destinationLng: destLng,
+                          geofenceRadiusMeters: geofence,
                         );
                       } else {
                         notifier.addExercise(
@@ -322,6 +400,11 @@ class _AdminExerciseEditorScreenState
                               explanationController.text.trim().isNotEmpty
                                   ? explanationController.text.trim()
                                   : null,
+                          photoPrompt: photoPrompt,
+                          retryCooldownSeconds: cooldown,
+                          destinationLat: destLat,
+                          destinationLng: destLng,
+                          geofenceRadiusMeters: geofence,
                         );
                       }
                     },
@@ -481,6 +564,8 @@ class _ExerciseTile extends StatelessWidget {
       ExerciseType.fillBlank => 'Fill Blank',
       ExerciseType.matching => 'Matching',
       ExerciseType.openEnded => 'Open Ended',
+      ExerciseType.photo => 'Photo',
+      ExerciseType.map => 'Map',
     };
   }
 }

@@ -39,15 +39,20 @@ enum ExerciseType {
 
 Existing fields reused:
 - `question` — user-facing instruction ("Take a photo of a succulent plant")
-- `correctAnswer` — keywords/criteria Gemini uses for validation (e.g., `["succulent", "thick fleshy leaves", "rosette shape"]`)
+- `correctAnswer` — keywords/criteria passed to Gemini as validation criteria. Note: for photo type, these are NOT user-facing answers but Gemini prompt keywords (e.g., `["succulent", "thick fleshy leaves", "rosette shape"]`). This dual meaning is documented here and in the entity's code comments.
 - `options` — unused (empty list) for photo type
 
 ### New Entity: PhotoValidationResult
 
+Uses `@freezed` for consistency with all other domain entities:
+
 ```dart
-class PhotoValidationResult {
-  final bool isCorrect;
-  final String rawResponse;  // Gemini's full text (for debugging)
+@freezed
+class PhotoValidationResult with _$PhotoValidationResult {
+  const factory PhotoValidationResult({
+    required bool isCorrect,
+    required String rawResponse,  // Gemini's full text (for debugging)
+  }) = _PhotoValidationResult;
 }
 ```
 
@@ -71,9 +76,10 @@ abstract class PhotoValidationRepository {
 Wraps `firebase_ai` SDK:
 
 1. Builds a structured prompt combining `photoPrompt` + `correctAnswer` keywords
-2. Sends `Content.multi([TextPart(prompt), InlineDataPart(mimeType, imageBytes)])`
-3. Parses response for `"CORRECT"` or `"INCORRECT"`
-4. Returns `PhotoValidationResult`
+2. **Compresses image** before sending: resize to max 1024px on longest side, JPEG quality 80%. This keeps requests well under the 20 MB limit regardless of device camera resolution.
+3. Sends `Content.multi([TextPart(prompt), InlineDataPart(mimeType, imageBytes)])`
+4. Parses response for `"CORRECT"` or `"INCORRECT"`
+5. Returns `PhotoValidationResult`
 
 ### Prompt Template
 
@@ -90,38 +96,81 @@ Use `gemini-2.5-flash` (free tier: ~15 RPM, 1000 req/day). Sufficient for a lear
 
 ### Constraints
 
-- Max request size: 20 MB
+- Max request size: 20 MB (mitigated by client-side compression)
 - Supported formats: JPEG, PNG, WebP
 - Fallback: any non-"CORRECT" response is treated as incorrect (safe default)
+
+### Error Handling
+
+| Scenario | User Experience |
+|----------|---------------|
+| Network error / timeout | Show "Validation failed. Check your connection and try again." with an immediate retry button (no cooldown). |
+| Gemini rate limit (429) | Show "Too many requests. Please wait a moment and try again." with immediate retry. |
+| Gemini service error (500) | Same as network error — generic failure message with retry. |
+| Non-parseable response | Treated as incorrect (safe fallback). |
+
+**Key distinction:** API/network failures show an **error state** with immediate retry. Only a definitive "INCORRECT" response triggers the 60-second cooldown. This prevents punishing users for infrastructure issues.
+
+## Section Integration: Mixed Exercise Handling
+
+### The Problem
+
+The existing `ExerciseScreen` uses a collective submit model: all exercises must be answered before a single "Submit Answers" button is enabled. Photo exercises are standalone and don't write to the answer map, which would break the submit gate.
+
+### The Solution
+
+Photo exercises are **excluded from the section's submit gate and scoring denominator:**
+
+1. `ExerciseScreen` filters photo exercises out when calculating:
+   - Progress bar total (denominator)
+   - "Submit Answers" enabled condition (`_answers.length == nonPhotoExercises.length`)
+   - Score calculation in `ExerciseScorer`
+2. Photo exercises render inline in the exercise list but manage their own completion state independently
+3. `ExerciseScorer.score()` handles the new `photo` case by returning `0.0` (it will never be called for photo exercises due to the filtering above, but this prevents the exhaustive switch compile error)
+
+This means a section with 3 MCQs and 1 photo exercise has a scoring denominator of 3. The photo exercise is a bonus/standalone activity within the section.
 
 ## UI Flow
 
 ### PhotoExerciseWidget States
 
 1. **Idle** — Shows question + camera button
-2. **Capturing** — `image_picker` opens device camera (`ImageSource.camera`)
-3. **Preview** — Shows captured photo + "Submit" / "Retake" buttons
-4. **Validating** — Photo with loading spinner overlay
-5. **Result: Correct** — Green checkmark, "Correct!" message, continue button
-6. **Result: Incorrect** — Red X, "Incorrect" message, disabled retry button with countdown timer
-7. **Cooldown expired** — Retry button re-enables
+2. **Permission Denied** — Shows message explaining camera access is required + button to open app settings
+3. **Capturing** — `image_picker` opens device camera (`ImageSource.camera`)
+4. **Preview** — Shows captured photo + "Submit" / "Retake" buttons
+5. **Validating** — Photo with loading spinner overlay
+6. **Result: Correct** — Green checkmark, "Correct!" message
+7. **Result: Incorrect** — Red X, "Incorrect" message, disabled retry button with countdown timer
+8. **Error** — "Validation failed" message with immediate retry button (no cooldown)
+9. **Cooldown expired** — Retry button re-enables
+10. **Offline** — Camera button disabled with "Requires internet connection" message
 
 ### Flow Diagram
 
 ```
-Idle → [tap camera] → Capturing → [photo taken] → Preview
-Preview → [tap submit] → Validating → Result
-Preview → [tap retake] → Capturing
+Idle → [tap camera] → (permission check)
+  → [denied] → Permission Denied → [open settings] → Idle
+  → [granted] → Capturing → [photo taken] → Preview
 
-Result (incorrect) → [wait 60s] → Idle (retry)
-Result (correct) → [tap continue] → next exercise or back to section
+Preview → [tap submit] → Validating
+  → [success: CORRECT] → Result: Correct
+  → [success: INCORRECT] → Result: Incorrect → [wait 60s] → Idle (retry)
+  → [API/network failure] → Error → [tap retry] → Idle (immediate)
+
+Preview → [tap retake] → Capturing
+Result: Correct → [auto-advance or manual continue to next exercise in list]
 ```
 
 ### Key Decisions
 
 - Photo kept in memory as `Uint8List`, never persisted to storage
-- Cooldown enforced client-side only (low stakes, no server enforcement needed)
+- Cooldown enforced client-side only (low stakes, no server enforcement needed). Users can bypass by force-closing the app — this is an accepted tradeoff.
 - Widget is standalone — does not write to the section answer map
+- **Offline detection:** Check connectivity before enabling camera button. If offline, show disabled state.
+
+### Privacy Notice
+
+On first use of a photo exercise, show a one-time dismissible notice: "Your photo will be sent to Google's AI service for analysis. Photos are not stored." This is tracked via a local shared preference flag (`hasSeenPhotoPrivacyNotice`).
 
 ## Package Changes
 
@@ -141,25 +190,31 @@ Result (correct) → [tap continue] → next exercise or back to section
 | Layer | File | Change |
 |-------|------|--------|
 | Domain | `features/courses/domain/entities/exercise.dart` | Add `photo` to enum, add `photoPrompt` and `retryCooldownSeconds` fields |
-| Domain | `features/courses/domain/entities/photo_validation_result.dart` | New entity |
+| Domain | `features/courses/domain/entities/photo_validation_result.dart` | New freezed entity |
 | Domain | `features/courses/domain/repositories/photo_validation_repository.dart` | New abstract class |
-| Data | `features/courses/data/models/exercise_model.dart` | Update DTO for new fields |
-| Data | `features/courses/data/datasources/gemini_photo_datasource.dart` | New — wraps `firebase_ai` |
-| Data | `features/courses/data/repositories/photo_validation_repository_impl.dart` | New — implements abstract repo |
-| Presentation | `features/courses/presentation/widgets/exercise_widgets/photo_exercise_widget.dart` | New — full UI flow |
-| Presentation | `features/courses/presentation/providers/photo_validation_provider.dart` | New — Riverpod provider |
-| Presentation | `features/courses/presentation/screens/exercise_screen.dart` | Add `case ExerciseType.photo` |
+| Data | `features/courses/data/models/exercise_model.dart` | Update DTO fields, `toEntity()`, `fromEntity()`, and `fromJson`/`toJson` for new fields |
+| Data | `features/courses/data/datasources/gemini_photo_datasource.dart` | New — wraps `firebase_ai` with image compression |
+| Data | `features/courses/data/repositories/photo_validation_repository_impl.dart` | New — implements abstract repo with error handling |
+| Presentation | `features/courses/presentation/widgets/exercise_widgets/photo_exercise_widget.dart` | New — full UI flow with all states |
+| Presentation | `features/courses/presentation/providers/photo_validation_provider.dart` | New — Riverpod AsyncNotifier provider |
+| Presentation | `features/courses/presentation/screens/exercise_screen.dart` | Add `case ExerciseType.photo`, filter photo exercises from submit gate and scoring denominator |
+| Core | `core/utils/exercise_scorer.dart` | Add `ExerciseType.photo` case returning `0.0` (prevents exhaustive switch compile error) |
 | Config | `android/app/src/main/AndroidManifest.xml` | Camera permission |
 | Config | `ios/Runner/Info.plist` | Camera usage description |
 | Config | `pubspec.yaml` | Add `firebase_ai`, `image_picker` |
 
+**Post-edit step:** Run `dart run build_runner build` to regenerate `.freezed.dart` and `.g.dart` files after model changes.
+
 ## What's NOT Changing
 
-- `exercise_scorer.dart` — photo exercises are standalone
 - Practice/SM-2 system — no integration
 - Enrollment tracking — unaffected
 - Navigation/GoRouter — no new routes needed
 - Admin dashboard — out of scope (exercises assumed seeded in Firestore)
+
+## Trust Boundaries
+
+- `photoPrompt` is admin-configured via Firestore. Admins are trusted. If Firestore write access is compromised, prompt injection is possible but the blast radius is limited to incorrect validation results (not data exfiltration).
 
 ## Sources
 

@@ -70,13 +70,8 @@ class FirestoreCourseDatasource {
     List<String>? categoryIds,
   }) async {
     // Firestore doesn't support full-text search natively.
-    // We use a prefix match on the title field for basic search.
-    final lowerQuery = query.toLowerCase();
-    final endQuery = '$lowerQuery\uf8ff';
-
-    Query firestoreQuery = _coursesCollection
-        .orderBy('titleLower')
-        .startAt([lowerQuery]).endAt([endQuery]);
+    // Fetch all courses and filter client-side for substring matching.
+    Query firestoreQuery = _coursesCollection.orderBy('createdAt', descending: true);
 
     if (categoryIds != null && categoryIds.isNotEmpty) {
       firestoreQuery =
@@ -84,7 +79,16 @@ class FirestoreCourseDatasource {
     }
 
     final snapshot = await firestoreQuery.get();
-    return snapshot.docs.map((doc) => CourseModel.fromFirestore(doc)).toList();
+    final allCourses = snapshot.docs
+        .map((doc) => CourseModel.fromFirestore(doc))
+        .toList();
+
+    final lowerQuery = query.toLowerCase();
+    return allCourses.where((course) {
+      final title = (course.title).toLowerCase();
+      final description = (course.description).toLowerCase();
+      return title.contains(lowerQuery) || description.contains(lowerQuery);
+    }).toList();
   }
 
   Stream<List<CourseModel>> watchMostEnrolledCourses({int limit = 10}) {
@@ -119,22 +123,24 @@ class FirestoreCourseDatasource {
   }
 
   Future<List<SectionModel>> searchSections(String query) async {
+    // Fetch all sections and filter client-side for substring matching.
+    final coursesSnapshot = await _coursesCollection.get();
+    final results = <SectionModel>[];
     final lowerQuery = query.toLowerCase();
-    final endQuery = '$lowerQuery\uf8ff';
 
-    final snapshot = await _firestore
-        .collectionGroup('sections')
-        .orderBy('titleLower')
-        .startAt([lowerQuery])
-        .endAt([endQuery])
-        .limit(20)
-        .get();
+    for (final courseDoc in coursesSnapshot.docs) {
+      final sectionsSnapshot =
+          await courseDoc.reference.collection('sections').get();
+      for (final doc in sectionsSnapshot.docs) {
+        final model = SectionModel.fromFirestore(doc, courseDoc.id);
+        if (model.title.toLowerCase().contains(lowerQuery) ||
+            model.summary.toLowerCase().contains(lowerQuery)) {
+          results.add(model);
+        }
+      }
+    }
 
-    return snapshot.docs.map((doc) {
-      // Extract courseId from the document path: courses/{courseId}/sections/{sectionId}
-      final courseId = doc.reference.parent.parent!.id;
-      return SectionModel.fromFirestore(doc, courseId);
-    }).toList();
+    return results.take(20).toList();
   }
 
   // ── Sections ─────────────────────────────────────────────

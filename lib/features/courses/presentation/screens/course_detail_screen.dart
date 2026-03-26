@@ -274,15 +274,7 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
                         crossFadeState: _isDescriptionExpanded
                             ? CrossFadeState.showSecond
                             : CrossFadeState.showFirst,
-                        firstChild: Text(
-                          course.description,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                height: 1.6,
-                                color: AppColors.textSecondary,
-                              ),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        firstChild: const SizedBox.shrink(),
                         secondChild: Text(
                           course.description,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -525,14 +517,14 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
     required dynamic enrollment,
     required bool isAuthenticated,
   }) {
-    // Guest users: only section 1 is free preview, rest locked
+    // Guest users: only first section (order 0) is free preview, rest locked
     if (!isAuthenticated) {
-      return section.order == 1 ? SectionStatus.preview : SectionStatus.locked;
+      return section.order == 0 ? SectionStatus.preview : SectionStatus.locked;
     }
 
     // Authenticated but not enrolled: first section shows enroll prompt, rest locked
     if (enrollment == null) {
-      return section.order == 1
+      return section.order == 0
           ? SectionStatus.enrollToUnlock
           : SectionStatus.locked;
     }
@@ -541,7 +533,7 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
     if (completedSections.contains(section.order)) return SectionStatus.completed;
 
     // First section is always unlocked for enrolled users
-    if (section.order == 1) return SectionStatus.unlocked;
+    if (section.order == 0) return SectionStatus.unlocked;
     if (completedSections.contains(section.order - 1)) return SectionStatus.unlocked;
 
     return SectionStatus.locked;
@@ -553,7 +545,7 @@ class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
     SectionStatus status,
     bool isAuthenticated,
   ) {
-    if (!isAuthenticated && section.order != 1) {
+    if (!isAuthenticated && section.order != 0) {
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,

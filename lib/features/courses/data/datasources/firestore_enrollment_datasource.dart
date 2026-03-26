@@ -19,7 +19,6 @@ class FirestoreEnrollmentDatasource {
 
   Future<void> createEnrollment(EnrollmentModel enrollment) async {
     final docId = enrollment.documentId;
-
     await _enrollmentsCollection.doc(docId).set(enrollment.toFirestore());
 
     await _firestore
@@ -29,8 +28,7 @@ class FirestoreEnrollmentDatasource {
 
     try {
       await _updateEnrollmentPairs(enrollment.userId, enrollment.courseId);
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
   Future<EnrollmentModel?> getEnrollment(

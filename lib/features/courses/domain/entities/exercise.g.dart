@@ -6,23 +6,27 @@ part of 'exercise.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$ExerciseImpl _$$ExerciseImplFromJson(Map<String, dynamic> json) =>
-    _$ExerciseImpl(
-      id: json['id'] as String,
-      sectionId: json['sectionId'] as String,
-      type: $enumDecode(_$ExerciseTypeEnumMap, json['type']),
-      question: json['question'] as String,
-      options:
-          (json['options'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
-      correctAnswer: (json['correctAnswer'] as List<dynamic>)
-          .map((e) => e as String)
-          .toList(),
-      order: (json['order'] as num).toInt(),
-      explanation: json['explanation'] as String?,
-    );
+_$ExerciseImpl _$$ExerciseImplFromJson(
+  Map<String, dynamic> json,
+) => _$ExerciseImpl(
+  id: json['id'] as String,
+  sectionId: json['sectionId'] as String,
+  type: $enumDecode(_$ExerciseTypeEnumMap, json['type']),
+  question: json['question'] as String,
+  options:
+      (json['options'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      const [],
+  correctAnswer: (json['correctAnswer'] as List<dynamic>)
+      .map((e) => e as String)
+      .toList(),
+  order: (json['order'] as num).toInt(),
+  explanation: json['explanation'] as String?,
+  photoPrompt: json['photoPrompt'] as String?,
+  retryCooldownSeconds: (json['retryCooldownSeconds'] as num?)?.toInt() ?? 60,
+  destinationLat: (json['destinationLat'] as num?)?.toDouble(),
+  destinationLng: (json['destinationLng'] as num?)?.toDouble(),
+  geofenceRadiusMeters: (json['geofenceRadiusMeters'] as num?)?.toInt() ?? 100,
+);
 
 Map<String, dynamic> _$$ExerciseImplToJson(_$ExerciseImpl instance) =>
     <String, dynamic>{
@@ -34,6 +38,11 @@ Map<String, dynamic> _$$ExerciseImplToJson(_$ExerciseImpl instance) =>
       'correctAnswer': instance.correctAnswer,
       'order': instance.order,
       'explanation': instance.explanation,
+      'photoPrompt': instance.photoPrompt,
+      'retryCooldownSeconds': instance.retryCooldownSeconds,
+      'destinationLat': instance.destinationLat,
+      'destinationLng': instance.destinationLng,
+      'geofenceRadiusMeters': instance.geofenceRadiusMeters,
     };
 
 const _$ExerciseTypeEnumMap = {
@@ -42,4 +51,6 @@ const _$ExerciseTypeEnumMap = {
   ExerciseType.trueFalse: 'trueFalse',
   ExerciseType.matching: 'matching',
   ExerciseType.openEnded: 'openEnded',
+  ExerciseType.photo: 'photo',
+  ExerciseType.map: 'map',
 };

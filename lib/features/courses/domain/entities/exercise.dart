@@ -9,6 +9,8 @@ enum ExerciseType {
   trueFalse,
   matching,
   openEnded,
+  photo,
+  map,
 }
 
 @freezed
@@ -22,6 +24,11 @@ abstract class Exercise with _$Exercise {
     required List<String> correctAnswer,
     required int order,
     String? explanation,
+    String? photoPrompt,
+    @Default(60) int retryCooldownSeconds,
+    double? destinationLat,
+    double? destinationLng,
+    @Default(100) int geofenceRadiusMeters,
   }) = _Exercise;
 
   factory Exercise.fromJson(Map<String, dynamic> json) =>

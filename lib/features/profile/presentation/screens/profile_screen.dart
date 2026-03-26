@@ -10,6 +10,10 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../courses/domain/entities/enrollment.dart';
 import '../../../courses/presentation/providers/course_provider.dart';
 import '../../../courses/presentation/providers/enrollment_provider.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../../../auth/presentation/providers/profile_photo_provider.dart';
+import '../widgets/photo_picker_bottom_sheet.dart';
 import '../widgets/profile_field.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -146,6 +150,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Widget _buildAuthenticatedView(
       BuildContext context, dynamic user) {
+    final photoState = ref.watch(profilePhotoNotifierProvider);
+    final isPhotoUploading = photoState.isLoading;
+
+    ref.listen(profilePhotoNotifierProvider, (_, next) {
+      if (next.hasError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error.toString()),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -171,39 +191,62 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             Center(
               child: Stack(
                 children: [
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [AppColors.primary, AppColors.primaryLight],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.25),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: user.photoUrl != null
-                        ? ClipOval(
-                            child: Image.network(
-                              user.photoUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => _buildAvatarText(user),
+                  Stack(
+                    children: [
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [AppColors.primary, AppColors.primaryLight],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.25),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
                             ),
-                          )
-                        : _buildAvatarText(user),
+                          ],
+                        ),
+                        child: user.photoUrl != null
+                            ? ClipOval(
+                                child: Image.network(
+                                  user.photoUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) => _buildAvatarText(user),
+                                ),
+                              )
+                            : _buildAvatarText(user),
+                      ),
+                      if (isPhotoUploading)
+                        Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black.withValues(alpha: 0.4),
+                          ),
+                          child: const Center(
+                            child: SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   Positioned(
                     bottom: 0,
                     right: 0,
                     child: GestureDetector(
-                      onTap: () => _showEditDisplayNameDialog(context, user),
+                      onTap: () => _showPhotoPickerSheet(context, user),
                       child: Container(
                         width: 34,
                         height: 34,
@@ -651,6 +694,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  void _showPhotoPickerSheet(BuildContext context, dynamic user) async {
+    final option = await showModalBottomSheet<PhotoPickerOption>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => PhotoPickerBottomSheet(
+        hasExistingPhoto: user.photoUrl != null,
+      ),
+    );
+
+    if (option == null || !context.mounted) return;
+
+    switch (option) {
+      case PhotoPickerOption.camera:
+        ref.read(profilePhotoNotifierProvider.notifier).uploadPhoto(ImageSource.camera);
+      case PhotoPickerOption.gallery:
+        ref.read(profilePhotoNotifierProvider.notifier).uploadPhoto(ImageSource.gallery);
+      case PhotoPickerOption.remove:
+        ref.read(profilePhotoNotifierProvider.notifier).removePhoto();
+      case PhotoPickerOption.editName:
+        _showEditDisplayNameDialog(context, user);
+    }
   }
 
   void _showEditDisplayNameDialog(BuildContext context, dynamic user) {

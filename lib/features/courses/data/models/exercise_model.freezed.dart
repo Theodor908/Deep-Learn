@@ -29,6 +29,11 @@ mixin _$ExerciseModel {
   List<String> get correctAnswer => throw _privateConstructorUsedError;
   int get order => throw _privateConstructorUsedError;
   String? get explanation => throw _privateConstructorUsedError;
+  String? get photoPrompt => throw _privateConstructorUsedError;
+  int get retryCooldownSeconds => throw _privateConstructorUsedError;
+  double? get destinationLat => throw _privateConstructorUsedError;
+  double? get destinationLng => throw _privateConstructorUsedError;
+  int get geofenceRadiusMeters => throw _privateConstructorUsedError;
 
   /// Serializes this ExerciseModel to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -56,6 +61,11 @@ abstract class $ExerciseModelCopyWith<$Res> {
     List<String> correctAnswer,
     int order,
     String? explanation,
+    String? photoPrompt,
+    int retryCooldownSeconds,
+    double? destinationLat,
+    double? destinationLng,
+    int geofenceRadiusMeters,
   });
 }
 
@@ -82,6 +92,11 @@ class _$ExerciseModelCopyWithImpl<$Res, $Val extends ExerciseModel>
     Object? correctAnswer = null,
     Object? order = null,
     Object? explanation = freezed,
+    Object? photoPrompt = freezed,
+    Object? retryCooldownSeconds = null,
+    Object? destinationLat = freezed,
+    Object? destinationLng = freezed,
+    Object? geofenceRadiusMeters = null,
   }) {
     return _then(
       _value.copyWith(
@@ -117,6 +132,26 @@ class _$ExerciseModelCopyWithImpl<$Res, $Val extends ExerciseModel>
                 ? _value.explanation
                 : explanation // ignore: cast_nullable_to_non_nullable
                       as String?,
+            photoPrompt: freezed == photoPrompt
+                ? _value.photoPrompt
+                : photoPrompt // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            retryCooldownSeconds: null == retryCooldownSeconds
+                ? _value.retryCooldownSeconds
+                : retryCooldownSeconds // ignore: cast_nullable_to_non_nullable
+                      as int,
+            destinationLat: freezed == destinationLat
+                ? _value.destinationLat
+                : destinationLat // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            destinationLng: freezed == destinationLng
+                ? _value.destinationLng
+                : destinationLng // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            geofenceRadiusMeters: null == geofenceRadiusMeters
+                ? _value.geofenceRadiusMeters
+                : geofenceRadiusMeters // ignore: cast_nullable_to_non_nullable
+                      as int,
           )
           as $Val,
     );
@@ -141,6 +176,11 @@ abstract class _$$ExerciseModelImplCopyWith<$Res>
     List<String> correctAnswer,
     int order,
     String? explanation,
+    String? photoPrompt,
+    int retryCooldownSeconds,
+    double? destinationLat,
+    double? destinationLng,
+    int geofenceRadiusMeters,
   });
 }
 
@@ -166,6 +206,11 @@ class __$$ExerciseModelImplCopyWithImpl<$Res>
     Object? correctAnswer = null,
     Object? order = null,
     Object? explanation = freezed,
+    Object? photoPrompt = freezed,
+    Object? retryCooldownSeconds = null,
+    Object? destinationLat = freezed,
+    Object? destinationLng = freezed,
+    Object? geofenceRadiusMeters = null,
   }) {
     return _then(
       _$ExerciseModelImpl(
@@ -201,6 +246,26 @@ class __$$ExerciseModelImplCopyWithImpl<$Res>
             ? _value.explanation
             : explanation // ignore: cast_nullable_to_non_nullable
                   as String?,
+        photoPrompt: freezed == photoPrompt
+            ? _value.photoPrompt
+            : photoPrompt // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        retryCooldownSeconds: null == retryCooldownSeconds
+            ? _value.retryCooldownSeconds
+            : retryCooldownSeconds // ignore: cast_nullable_to_non_nullable
+                  as int,
+        destinationLat: freezed == destinationLat
+            ? _value.destinationLat
+            : destinationLat // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        destinationLng: freezed == destinationLng
+            ? _value.destinationLng
+            : destinationLng // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        geofenceRadiusMeters: null == geofenceRadiusMeters
+            ? _value.geofenceRadiusMeters
+            : geofenceRadiusMeters // ignore: cast_nullable_to_non_nullable
+                  as int,
       ),
     );
   }
@@ -218,6 +283,11 @@ class _$ExerciseModelImpl extends _ExerciseModel {
     required final List<String> correctAnswer,
     required this.order,
     this.explanation,
+    this.photoPrompt,
+    this.retryCooldownSeconds = 60,
+    this.destinationLat,
+    this.destinationLng,
+    this.geofenceRadiusMeters = 100,
   }) : _options = options,
        _correctAnswer = correctAnswer,
        super._();
@@ -254,10 +324,22 @@ class _$ExerciseModelImpl extends _ExerciseModel {
   final int order;
   @override
   final String? explanation;
+  @override
+  final String? photoPrompt;
+  @override
+  @JsonKey()
+  final int retryCooldownSeconds;
+  @override
+  final double? destinationLat;
+  @override
+  final double? destinationLng;
+  @override
+  @JsonKey()
+  final int geofenceRadiusMeters;
 
   @override
   String toString() {
-    return 'ExerciseModel(id: $id, sectionId: $sectionId, type: $type, question: $question, options: $options, correctAnswer: $correctAnswer, order: $order, explanation: $explanation)';
+    return 'ExerciseModel(id: $id, sectionId: $sectionId, type: $type, question: $question, options: $options, correctAnswer: $correctAnswer, order: $order, explanation: $explanation, photoPrompt: $photoPrompt, retryCooldownSeconds: $retryCooldownSeconds, destinationLat: $destinationLat, destinationLng: $destinationLng, geofenceRadiusMeters: $geofenceRadiusMeters)';
   }
 
   @override
@@ -278,7 +360,17 @@ class _$ExerciseModelImpl extends _ExerciseModel {
             ) &&
             (identical(other.order, order) || other.order == order) &&
             (identical(other.explanation, explanation) ||
-                other.explanation == explanation));
+                other.explanation == explanation) &&
+            (identical(other.photoPrompt, photoPrompt) ||
+                other.photoPrompt == photoPrompt) &&
+            (identical(other.retryCooldownSeconds, retryCooldownSeconds) ||
+                other.retryCooldownSeconds == retryCooldownSeconds) &&
+            (identical(other.destinationLat, destinationLat) ||
+                other.destinationLat == destinationLat) &&
+            (identical(other.destinationLng, destinationLng) ||
+                other.destinationLng == destinationLng) &&
+            (identical(other.geofenceRadiusMeters, geofenceRadiusMeters) ||
+                other.geofenceRadiusMeters == geofenceRadiusMeters));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -293,6 +385,11 @@ class _$ExerciseModelImpl extends _ExerciseModel {
     const DeepCollectionEquality().hash(_correctAnswer),
     order,
     explanation,
+    photoPrompt,
+    retryCooldownSeconds,
+    destinationLat,
+    destinationLng,
+    geofenceRadiusMeters,
   );
 
   /// Create a copy of ExerciseModel
@@ -319,6 +416,11 @@ abstract class _ExerciseModel extends ExerciseModel {
     required final List<String> correctAnswer,
     required final int order,
     final String? explanation,
+    final String? photoPrompt,
+    final int retryCooldownSeconds,
+    final double? destinationLat,
+    final double? destinationLng,
+    final int geofenceRadiusMeters,
   }) = _$ExerciseModelImpl;
   const _ExerciseModel._() : super._();
 
@@ -341,6 +443,16 @@ abstract class _ExerciseModel extends ExerciseModel {
   int get order;
   @override
   String? get explanation;
+  @override
+  String? get photoPrompt;
+  @override
+  int get retryCooldownSeconds;
+  @override
+  double? get destinationLat;
+  @override
+  double? get destinationLng;
+  @override
+  int get geofenceRadiusMeters;
 
   /// Create a copy of ExerciseModel
   /// with the given fields replaced by the non-null parameter values.

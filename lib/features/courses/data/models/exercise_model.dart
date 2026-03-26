@@ -19,6 +19,11 @@ abstract class ExerciseModel with _$ExerciseModel {
     required List<String> correctAnswer,
     required int order,
     String? explanation,
+    String? photoPrompt,
+    @Default(60) int retryCooldownSeconds,
+    double? destinationLat,
+    double? destinationLng,
+    @Default(100) int geofenceRadiusMeters,
   }) = _ExerciseModel;
 
   factory ExerciseModel.fromJson(Map<String, dynamic> json) =>
@@ -55,6 +60,11 @@ abstract class ExerciseModel with _$ExerciseModel {
         correctAnswer: correctAnswer,
         order: order,
         explanation: explanation,
+        photoPrompt: photoPrompt,
+        retryCooldownSeconds: retryCooldownSeconds,
+        destinationLat: destinationLat,
+        destinationLng: destinationLng,
+        geofenceRadiusMeters: geofenceRadiusMeters,
       );
 
   factory ExerciseModel.fromEntity(Exercise exercise) => ExerciseModel(
@@ -66,5 +76,10 @@ abstract class ExerciseModel with _$ExerciseModel {
         correctAnswer: exercise.correctAnswer,
         order: exercise.order,
         explanation: exercise.explanation,
+        photoPrompt: exercise.photoPrompt,
+        retryCooldownSeconds: exercise.retryCooldownSeconds,
+        destinationLat: exercise.destinationLat,
+        destinationLng: exercise.destinationLng,
+        geofenceRadiusMeters: exercise.geofenceRadiusMeters,
       );
 }

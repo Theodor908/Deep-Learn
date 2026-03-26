@@ -266,7 +266,7 @@ class _UserByIdProviderElement
 }
 
 String _$adminCourseNotifierHash() =>
-    r'3e795dab0ba526c0026c03d32a87a60666d8c3b0';
+    r'1f9c0f9f51e2dbb848cd92d616d91865bd71ee40';
 
 /// See also [AdminCourseNotifier].
 @ProviderFor(AdminCourseNotifier)

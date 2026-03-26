@@ -7,7 +7,6 @@ import '../../../courses/domain/entities/course.dart';
 import '../../../courses/presentation/providers/course_provider.dart';
 import 'admin_course_editor_screen.dart';
 import 'admin_course_detail_screen.dart';
-import 'admin_seed_screen.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
@@ -43,15 +42,7 @@ class AdminDashboardScreen extends ConsumerWidget {
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: PhosphorIcon(PhosphorIcons.database(), size: 22),
-            tooltip: 'Seed Database',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AdminSeedScreen()),
-            ),
-          ),
-        ],
+        actions: const [],
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),

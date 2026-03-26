@@ -164,6 +164,11 @@ class AdminCourseNotifier extends _$AdminCourseNotifier {
     required List<String> options,
     required String correctAnswer,
     String? explanation,
+    String? photoPrompt,
+    int? retryCooldownSeconds,
+    double? destinationLat,
+    double? destinationLng,
+    int? geofenceRadiusMeters,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
@@ -181,6 +186,11 @@ class AdminCourseNotifier extends _$AdminCourseNotifier {
         'options': options,
         'correctAnswer': correctAnswer,
         'explanation': explanation,
+        if (photoPrompt != null) 'photoPrompt': photoPrompt,
+        if (retryCooldownSeconds != null) 'retryCooldownSeconds': retryCooldownSeconds,
+        if (destinationLat != null) 'destinationLat': destinationLat,
+        if (destinationLng != null) 'destinationLng': destinationLng,
+        if (geofenceRadiusMeters != null) 'geofenceRadiusMeters': geofenceRadiusMeters,
       });
     });
     ref.invalidate(sectionExercisesProvider);
@@ -195,6 +205,11 @@ class AdminCourseNotifier extends _$AdminCourseNotifier {
     required String correctAnswer,
     required int order,
     String? explanation,
+    String? photoPrompt,
+    int? retryCooldownSeconds,
+    double? destinationLat,
+    double? destinationLng,
+    int? geofenceRadiusMeters,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
@@ -212,6 +227,11 @@ class AdminCourseNotifier extends _$AdminCourseNotifier {
         'correctAnswer': correctAnswer,
         'order': order,
         'explanation': explanation,
+        if (photoPrompt != null) 'photoPrompt': photoPrompt,
+        if (retryCooldownSeconds != null) 'retryCooldownSeconds': retryCooldownSeconds,
+        if (destinationLat != null) 'destinationLat': destinationLat,
+        if (destinationLng != null) 'destinationLng': destinationLng,
+        if (geofenceRadiusMeters != null) 'geofenceRadiusMeters': geofenceRadiusMeters,
       });
     });
     ref.invalidate(sectionExercisesProvider);

@@ -66,5 +66,13 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to take photos for photo exercises.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs photo library access to choose a profile picture.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Deep Learn needs your location to guide you to exercise destinations.</string>
+	<key>MAPS_API_KEY</key>
+	<string>$(MAPS_API_KEY)</string>
 </dict>
 </plist>

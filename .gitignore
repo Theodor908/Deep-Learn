@@ -47,11 +47,5 @@ app.*.map.json
 # Firebase
 /service-account-key.json
 
-# Claude AI
-.claude/
-CLAUDE.md
-docs/plans/
-
-# Node modules (seed scripts)
-scripts/node_modules/
-scripts/package-lock.json
+# API Keys / Secrets
+ios/Flutter/Secrets.xcconfig

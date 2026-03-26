@@ -7,8 +7,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 // Must be top-level for FCM background handling
 @pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-}
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {}
 
 class NotificationService {
   final FirebaseMessaging _messaging;
@@ -30,11 +29,8 @@ class NotificationService {
 
   Future<void> initialize() async {
     tz.initializeTimeZones();
-
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
     await _requestPermissions();
-
     await _initializeLocalNotifications();
 
     if (Platform.isAndroid) {
@@ -111,8 +107,7 @@ class NotificationService {
     );
   }
 
-  void _onNotificationTapped(NotificationResponse response) {
-  }
+  void _onNotificationTapped(NotificationResponse response) {}
 
   Future<void> scheduleReviewReminder({
     required int id,

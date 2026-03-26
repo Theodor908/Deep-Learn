@@ -30,7 +30,6 @@ class LearnRedirectScreen extends ConsumerWidget {
         }
 
         final mostRecent = enrollments.first;
-
         final sectionsAsync =
             ref.watch(courseSectionsProvider(mostRecent.courseId));
 
