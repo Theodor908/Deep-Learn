@@ -2,6 +2,15 @@
 
 A Flutter mobile app for discovering, enrolling in, and practicing courses. Built with Firebase as the backend and featuring spaced repetition for long-term retention.
 
+<img width="1920" height="1080" alt="1" src="https://github.com/user-attachments/assets/20354689-8bbb-4901-881e-1ae17f2535a1" />
+
+<img width="1920" height="1080" alt="2" src="https://github.com/user-attachments/assets/ce3a5044-90f7-4904-97e9-86df29a52b3d" />
+
+<img width="1920" height="1080" alt="3" src="https://github.com/user-attachments/assets/cba2d777-4b38-48b3-9226-4e30a8ba701f" />
+
+<img width="1920" height="1080" alt="4" src="https://github.com/user-attachments/assets/bbe585ac-0210-44c7-ac16-76cfbdbbfdff" />
+
+
 ## Features
 
 - Browse and search courses by category
